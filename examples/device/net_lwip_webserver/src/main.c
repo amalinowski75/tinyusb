@@ -51,7 +51,19 @@ try changing the first byte of tud_network_mac_address[] below from 0x02 to 0x00
 #include "lwip/init.h"
 #include "lwip/timeouts.h"
 #include "lwip/ethip6.h"
+#include "lwip/tcpip.h"
 #include "httpd.h"
+
+#include "FreeRTOS.h"
+#include "semphr.h"
+#include "queue.h"
+#include "task.h"
+#include "timers.h"
+
+#include "udpecho.h"
+
+// Increase stack size when debug log is enabled
+#define USBD_STACK_SIZE    (32*configMINIMAL_STACK_SIZE/2) * (CFG_TUSB_DEBUG ? 2 : 1)
 
 #define INIT_IP4(a,b,c,d) { PP_HTONL(LWIP_MAKEU32(a,b,c,d)) }
 
@@ -143,7 +155,7 @@ static void init_lwip(void)
 {
   struct netif *netif = &netif_data;
 
-  lwip_init();
+  tcpip_init(NULL, NULL);
 
   /* the lwip virtual MAC address must be different from the host's; to ensure this, we toggle the LSbit */
   netif->hwaddr_len = sizeof(tud_network_mac_address);
@@ -224,40 +236,72 @@ void tud_network_init_cb(void)
   }
 }
 
-int main(void)
+// static timer
+StaticTimer_t blinky_tmdef;
+TimerHandle_t blinky_tm;
+
+// static task
+StackType_t  usb_device_stack[USBD_STACK_SIZE];
+StaticTask_t usb_device_taskdef;
+
+void led_blinky_cb(TimerHandle_t xTimer)
 {
-  /* initialize TinyUSB */
-  board_init();
-  tusb_init();
+  (void) xTimer;
+  static bool led_state = false;
+
+  board_led_write(led_state);
+  led_state = !led_state; // toggle
+}
+
+void usb_device_task(void* param)
+{
+  (void) param;
 
   /* initialize lwip, dhcp-server, dns-server, and http */
   init_lwip();
   while (!netif_is_up(&netif_data));
   while (dhserv_init(&dhcp_config) != ERR_OK);
   while (dnserv_init(IP_ADDR_ANY, 53, dns_query_proc) != ERR_OK);
-  httpd_init();
+  udpecho_init();
 
+  // This should be called after scheduler/kernel is started.
+  // Otherwise it could cause kernel issue since USB IRQ handler does use RTOS queue API.
+  tusb_init();
+
+  // RTOS forever loop
   while (1)
   {
+    // put this thread to waiting state until there is new events
     tud_task();
+
     service_traffic();
+    // following code only run if tud_task() process at least 1 event
   }
+}
 
+int main(void)
+{
+  /* initialize TinyUSB */
+  board_init();
+
+//  /* initialize lwip, dhcp-server, dns-server, and http */
+//  init_lwip();
+//  while (!netif_is_up(&netif_data));
+//  while (dhserv_init(&dhcp_config) != ERR_OK);
+//  while (dnserv_init(IP_ADDR_ANY, 53, dns_query_proc) != ERR_OK);
+//  udpecho_init();
+
+  // soft timer for blinky
+  blinky_tm = xTimerCreateStatic(NULL, pdMS_TO_TICKS(250), true, NULL, led_blinky_cb, &blinky_tmdef);
+  xTimerStart(blinky_tm, 0);
+
+  // Create a task for tinyusb device stack
+  (void) xTaskCreateStatic( usb_device_task, "usbd", USBD_STACK_SIZE, NULL, configMAX_PRIORITIES-1, usb_device_stack, &usb_device_taskdef);
+
+  vTaskStartScheduler();
   return 0;
 }
 
-/* lwip has provision for using a mutex, when applicable */
-sys_prot_t sys_arch_protect(void)
-{
-  return 0;
-}
-void sys_arch_unprotect(sys_prot_t pval)
-{
-  (void)pval;
-}
-
-/* lwip needs a millisecond time source, and the TinyUSB board support code has one available */
-uint32_t sys_now(void)
-{
-  return board_millis();
+void custom_debug_message(const char *fmt, ...) {
+	TU_LOG1(fmt);
 }

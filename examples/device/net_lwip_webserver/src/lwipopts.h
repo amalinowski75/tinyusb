@@ -33,19 +33,46 @@
 #define __LWIPOPTS_H__
 
 /* Prevent having to link sys_arch.c (we don't test the API layers in unit tests) */
-#define NO_SYS                          1
+#define NO_SYS                          0
 #define MEM_ALIGNMENT                   4
+#define MEM_SIZE                   	16384
 #define LWIP_RAW                        0
-#define LWIP_NETCONN                    0
+#define LWIP_NETCONN                    1
 #define LWIP_SOCKET                     0
 #define LWIP_DHCP                       0
 #define LWIP_ICMP                       1
 #define LWIP_UDP                        1
-#define LWIP_TCP                        1
+#define LWIP_TCP                        0
 #define LWIP_IPV4                       1
 #define LWIP_IPV6                       0
 #define ETH_PAD_SIZE                    0
 #define LWIP_IP_ACCEPT_UDP_PORT(p)      ((p) == PP_NTOHS(67))
+
+/* MEMP_NUM_PBUF: the number of memp struct pbufs. If the application
+   sends a lot of data out of ROM (or other static memory), this
+   should be set high. */
+#define MEMP_NUM_PBUF           10
+/* MEMP_NUM_UDP_PCB: the number of UDP protocol control blocks. One
+   per active UDP "connection". */
+#define MEMP_NUM_UDP_PCB        6
+/* MEMP_NUM_TCP_PCB: the number of simulatenously active TCP
+   connections. */
+#define MEMP_NUM_TCP_PCB        10
+/* MEMP_NUM_TCP_PCB_LISTEN: the number of listening TCP
+   connections. */
+#define MEMP_NUM_TCP_PCB_LISTEN 5
+/* MEMP_NUM_TCP_SEG: the number of simultaneously queued TCP
+   segments. */
+#define MEMP_NUM_TCP_SEG        8
+/* MEMP_NUM_SYS_TIMEOUT: the number of simulateously active
+   timeouts. */
+#define MEMP_NUM_SYS_TIMEOUT    10
+/* ---------- Pbuf options ---------- */
+/* PBUF_POOL_SIZE: the number of buffers in the pbuf pool. */
+#define PBUF_POOL_SIZE          8
+
+/* PBUF_POOL_BUFSIZE: the size of each pbuf in the pbuf pool. */
+#define PBUF_POOL_BUFSIZE       500
 
 #define TCP_MSS                         (1500 /*mtu*/ - 20 /*iphdr*/ - 20 /*tcphhr*/)
 #define TCP_SND_BUF                     (2 * TCP_MSS)
@@ -59,13 +86,31 @@
 
 #define LWIP_SINGLE_NETIF               1
 
-#define PBUF_POOL_SIZE                  2
-
 #define HTTPD_USE_CUSTOM_FSDATA         0
 
 #define LWIP_MULTICAST_PING             1
 #define LWIP_BROADCAST_PING             1
 #define LWIP_IPV6_MLD                   0
 #define LWIP_IPV6_SEND_ROUTER_SOLICIT   0
+
+//#define LWIP_DBG_MIN_LEVEL	   LWIP_DBG_LEVEL_ALL
+//#define API_LIB_DEBUG              LWIP_DBG_ON
+//#define API_MSG_DEBUG              LWIP_DBG_ON
+//#define NETIF_DEBUG                LWIP_DBG_ON
+//#define IP_DEBUG                   LWIP_DBG_ON
+//#define IP_REASS_DEBUG             LWIP_DBG_ON
+//#define UDP_DEBUG                  LWIP_DBG_ON
+
+#define LWIP_PROVIDE_ERRNO	
+#define LWIP_NETCONN_SEM_PER_THREAD 0
+
+#define TCPIP_THREAD_NAME              "TCP/IP"
+#define TCPIP_THREAD_STACKSIZE          1000
+#define TCPIP_MBOX_SIZE                 6
+#define DEFAULT_UDP_RECVMBOX_SIZE       6
+#define DEFAULT_TCP_RECVMBOX_SIZE       6
+#define DEFAULT_ACCEPTMBOX_SIZE         6
+#define DEFAULT_THREAD_STACKSIZE        500
+#define TCPIP_THREAD_PRIO               5
 
 #endif /* __LWIPOPTS_H__ */

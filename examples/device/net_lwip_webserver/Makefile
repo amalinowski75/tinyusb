@@ -1,13 +1,17 @@
 DEPS_SUBMODULES += lib/lwip
+DEPS_SUBMODULES += lib/FreeRTOS-Kernel
 
 include ../../../tools/top.mk
 include ../../make.mk
+
+FREERTOS_SRC = lib/FreeRTOS-Kernel
 
 # suppress warning caused by lwip
 CFLAGS += \
   -Wno-error=null-dereference \
   -Wno-error=unused-parameter \
-  -Wno-error=unused-variable
+  -Wno-error=unused-variable \
+  -Wno-error=cast-qual
 
 INC += \
   src \
@@ -15,7 +19,12 @@ INC += \
   $(TOP)/lib/lwip/src/include \
   $(TOP)/lib/lwip/src/include/ipv4 \
   $(TOP)/lib/lwip/src/include/lwip/apps \
+  src/FreeRTOSConfig \
+  $(TOP)/hw \
+  $(TOP)/$(FREERTOS_SRC)/include \
+  $(TOP)/$(FREERTOS_SRC)/portable/GCC/$(FREERTOS_PORT) \
   $(TOP)/lib/networking
+
 
 # Example source
 EXAMPLE_SOURCE += $(wildcard src/*.c)
@@ -39,6 +48,11 @@ SRC_C += \
   lib/lwip/src/core/stats.c \
   lib/lwip/src/core/sys.c \
   lib/lwip/src/core/tcp.c \
+  lib/lwip/src/api/err.c \
+  lib/lwip/src/api/tcpip.c \
+  lib/lwip/src/api/api_lib.c \
+  lib/lwip/src/api/api_msg.c \
+  lib/lwip/src/api/netbuf.c \
   lib/lwip/src/core/tcp_in.c \
   lib/lwip/src/core/tcp_out.c \
   lib/lwip/src/core/timeouts.c \
@@ -51,21 +65,17 @@ SRC_C += \
   lib/lwip/src/core/ipv4/ip4.c \
   lib/lwip/src/core/ipv4/ip4_addr.c \
   lib/lwip/src/core/ipv4/ip4_frag.c \
-  lib/lwip/src/core/ipv6/dhcp6.c \
-  lib/lwip/src/core/ipv6/ethip6.c \
-  lib/lwip/src/core/ipv6/icmp6.c \
-  lib/lwip/src/core/ipv6/inet6.c \
-  lib/lwip/src/core/ipv6/ip6.c \
-  lib/lwip/src/core/ipv6/ip6_addr.c \
-  lib/lwip/src/core/ipv6/ip6_frag.c \
-  lib/lwip/src/core/ipv6/mld6.c \
-  lib/lwip/src/core/ipv6/nd6.c \
   lib/lwip/src/netif/ethernet.c \
   lib/lwip/src/netif/slipif.c \
-  lib/lwip/src/apps/http/httpd.c \
-  lib/lwip/src/apps/http/fs.c \
   lib/networking/dhserver.c \
   lib/networking/dnserver.c \
-  lib/networking/rndis_reports.c
+  lib/networking/rndis_reports.c \
+  $(FREERTOS_SRC)/list.c \
+  $(FREERTOS_SRC)/queue.c \
+  $(FREERTOS_SRC)/tasks.c \
+  $(FREERTOS_SRC)/timers.c \
+  $(subst ../../../,,$(wildcard ../../../$(FREERTOS_SRC)/portable/GCC/$(FREERTOS_PORT)/*.c))
+
+LDFLAGS += -Wl,--undefined=vTaskSwitchContext
 
 include ../../rules.mk
