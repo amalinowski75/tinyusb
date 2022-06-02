@@ -42,19 +42,22 @@
 #define LWIP_DHCP                       0
 #define LWIP_ICMP                       1
 #define LWIP_UDP                        1
-#define LWIP_TCP                        0
+#define LWIP_TCP                        1
 #define LWIP_IPV4                       1
 #define LWIP_IPV6                       0
 #define ETH_PAD_SIZE                    0
 #define LWIP_IP_ACCEPT_UDP_PORT(p)      ((p) == PP_NTOHS(67))
 
+#define UDP_TTL                 255
+
+#define MEMP_NUM_NETBUF         16
 /* MEMP_NUM_PBUF: the number of memp struct pbufs. If the application
    sends a lot of data out of ROM (or other static memory), this
    should be set high. */
-#define MEMP_NUM_PBUF           10
+#define MEMP_NUM_PBUF           16
 /* MEMP_NUM_UDP_PCB: the number of UDP protocol control blocks. One
    per active UDP "connection". */
-#define MEMP_NUM_UDP_PCB        6
+#define MEMP_NUM_UDP_PCB        10
 /* MEMP_NUM_TCP_PCB: the number of simulatenously active TCP
    connections. */
 #define MEMP_NUM_TCP_PCB        10
@@ -69,14 +72,15 @@
 #define MEMP_NUM_SYS_TIMEOUT    10
 /* ---------- Pbuf options ---------- */
 /* PBUF_POOL_SIZE: the number of buffers in the pbuf pool. */
-#define PBUF_POOL_SIZE          8
+#define PBUF_POOL_SIZE          20
 
 /* PBUF_POOL_BUFSIZE: the size of each pbuf in the pbuf pool. */
-#define PBUF_POOL_BUFSIZE       500
+#define PBUF_POOL_BUFSIZE       1024
 
-#define TCP_MSS                         (1500 /*mtu*/ - 20 /*iphdr*/ - 20 /*tcphhr*/)
-#define TCP_SND_BUF                     (2 * TCP_MSS)
-#define TCP_WND                         (TCP_MSS)
+//#define TCP_MSS                         (1500 /*mtu*/ - 20 /*iphdr*/ - 20 /*tcphhr*/)
+//#define TCP_SND_BUF                     (4 * TCP_MSS)
+//#define TCP_WND                         (TCP_MSS)
+//#define TCP_SND_QUEUELEN        	(2* TCP_SND_BUF/TCP_MSS)
 
 #define ETHARP_SUPPORT_STATIC_ENTRIES   1
 
@@ -92,25 +96,28 @@
 #define LWIP_BROADCAST_PING             1
 #define LWIP_IPV6_MLD                   0
 #define LWIP_IPV6_SEND_ROUTER_SOLICIT   0
+#define LWIP_NETBUF_RECVINFO		0
 
-//#define LWIP_DBG_MIN_LEVEL	   LWIP_DBG_LEVEL_ALL
+#define LWIP_DBG_MIN_LEVEL	   LWIP_DBG_LEVEL_ALL
 //#define API_LIB_DEBUG              LWIP_DBG_ON
 //#define API_MSG_DEBUG              LWIP_DBG_ON
 //#define NETIF_DEBUG                LWIP_DBG_ON
 //#define IP_DEBUG                   LWIP_DBG_ON
 //#define IP_REASS_DEBUG             LWIP_DBG_ON
 //#define UDP_DEBUG                  LWIP_DBG_ON
+#define TCP_DEBUG                  LWIP_DBG_ON
 
 #define LWIP_PROVIDE_ERRNO	
 #define LWIP_NETCONN_SEM_PER_THREAD 0
 
 #define TCPIP_THREAD_NAME              "TCP/IP"
-#define TCPIP_THREAD_STACKSIZE          1000
-#define TCPIP_MBOX_SIZE                 6
-#define DEFAULT_UDP_RECVMBOX_SIZE       6
-#define DEFAULT_TCP_RECVMBOX_SIZE       6
+#define TCPIP_THREAD_STACKSIZE          8000
+#define TCPIP_MBOX_SIZE                 16
+#define DEFAULT_UDP_RECVMBOX_SIZE       16
+#define DEFAULT_TCP_RECVMBOX_SIZE       16
 #define DEFAULT_ACCEPTMBOX_SIZE         6
-#define DEFAULT_THREAD_STACKSIZE        500
+#define DEFAULT_THREAD_STACKSIZE        1024
 #define TCPIP_THREAD_PRIO               5
+#define DEFAULT_RAW_RECVMBOX_SIZE       16
 
 #endif /* __LWIPOPTS_H__ */
