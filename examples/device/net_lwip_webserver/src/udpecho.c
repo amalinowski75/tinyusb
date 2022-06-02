@@ -41,22 +41,24 @@
 #include <string.h>
 #define INIT_IP4(a,b,c,d) { PP_HTONL(LWIP_MAKEU32(a,b,c,d)) }
 /*-----------------------------------------------------------------------------------*/
-static void
+  struct netbuf *buf;
+void
 udpecho1_thread(void *arg)
 {
   char buffer[32];
   const ip4_addr_t ipaddr  = INIT_IP4(192, 168, 7, 2);
   const int ip_port = 48001;
   struct netconn *conn;
-  struct netbuf *buf;
   err_t err;
   LWIP_UNUSED_ARG(arg);
 
   conn = netconn_new(NETCONN_UDP);
   LWIP_ERROR("udpecho: invalid conn", (conn != NULL), while(1){};);
-//  netconn_bind(conn, IP_ADDR_ANY, ip_port);
+  netconn_bind(conn, IP_ADDR_ANY, ip_port);
   strcpy(buffer, "Jest HiHi :) 48001");
   while (1) {
+	  TU_LOG1("Action\n");
+#if 0
     sys_msleep(1000);
     buf = netbuf_new();
 
@@ -70,12 +72,17 @@ udpecho1_thread(void *arg)
 //    netconn_send(conn, buf);
 
     netbuf_delete(buf);
-#if 0
+#endif
+#if 1
     err = netconn_recv(conn, &buf);
+    TU_LOG1("===================================================================\n");
     if (err == ERR_OK) {
+      memcpy(buffer, buf->p->payload, 10);
+      LWIP_DEBUGF(LWIP_DBG_ON, ("Received: %d <%d, %d, %d, %d>\n", buf->p->len, buffer[0], buffer[1], buffer[2], buffer[3]));
       /*  no need netconn_connect here, since the netbuf contains the address */
-      if(netbuf_copy(buf, buffer, sizeof(buffer)) != buf->p->tot_len) {
-        LWIP_DEBUGF(LWIP_DBG_ON, ("netbuf_copy failed\n"));
+      int copied = netbuf_copy(buf, buffer, sizeof(buffer));
+      if(copied != buf->p->tot_len) {
+        LWIP_DEBUGF(LWIP_DBG_ON, ("netbuf_copy failed: %d, ret: %d\n", buf->p->tot_len, copied));
       } else {
         buffer[buf->p->tot_len] = '\0';
         err = netconn_send(conn, buf);
@@ -90,14 +97,13 @@ udpecho1_thread(void *arg)
 #endif
   }
 }
-static void
-udpecho2_thread(void *arg)
+void udpecho2_thread(void *arg)
 {
   char buffer[32];
   const ip4_addr_t ipaddr  = INIT_IP4(192, 168, 7, 2);
   const int ip_port = 48002;
   struct netconn *conn;
-  struct netbuf *buf;
+  struct netbuf *buf = NULL;
   err_t err;
   LWIP_UNUSED_ARG(arg);
 
@@ -139,10 +145,41 @@ udpecho2_thread(void *arg)
 #endif
   }
 }
+void
+udpecho_thread(void *arg)
+{
+  static struct netconn *conn;
+  static struct netbuf *buf;
+  static ip_addr_t *addr;
+  static unsigned short port;
+  char buffer[4096];
+  err_t err;
+  LWIP_UNUSED_ARG(arg);
+
+  conn = netconn_new(NETCONN_UDP);
+  LWIP_ASSERT("con != NULL", conn != NULL);
+  netconn_bind(conn, NULL, 48003);
+
+  while (1) {
+    err = netconn_recv(conn, &buf);
+    if (err == ERR_OK) {
+      LWIP_DEBUGF(LWIP_DBG_ON, ("got %d\n", buf->p->tot_len));
+      addr = netbuf_fromaddr(buf);
+      port = netbuf_fromport(buf);
+      netconn_connect(conn, addr, port);
+      LWIP_DEBUGF(LWIP_DBG_ON, ("got %d\n", buf->p->tot_len));
+      netbuf_copy(buf, buffer, buf->p->tot_len);
+      LWIP_DEBUGF(LWIP_DBG_ON, ("got %d\n", buf->p->tot_len));
+      buffer[buf->p->tot_len] = '\0';
+      netconn_send(conn, buf);
+      netbuf_delete(buf);
+    }
+  }
+}
 /*-----------------------------------------------------------------------------------*/
 void
 udpecho_init(void)
 {
   sys_thread_new("udpecho1_thread", udpecho1_thread, NULL, 8192, 5);
-  sys_thread_new("udpecho2_thread", udpecho2_thread, NULL, 8192, 5);
+  //sys_thread_new("udpecho2_thread", udpecho2_thread, NULL, 8192, 5);
 }
