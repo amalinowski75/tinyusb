@@ -32,6 +32,8 @@
 #ifndef __CC_H__
 #define __CC_H__
 
+#include <stdio.h>
+
 //#include "cpu.h"
 #define LWIP_COMPAT_MUTEX 0
 //typedef int sys_prot_t;
@@ -73,9 +75,9 @@
 #define LWIP_DEBUG
 
 
-#define LWIP_PLATFORM_DIAG(__msg) custom_debug_message __msg
+#define LWIP_PLATFORM_DIAG(__msg) do {printf __msg;} while (0)
 
-#define LWIP_PLATFORM_ASSERT(x) do { custom_debug_message(x); if(!(x)) while(1); } while(0)
+#define LWIP_PLATFORM_ASSERT(x) do { if(!(x)) { printf(x); while(1); } } while(0)
 
 
 void custom_debug_message(const char *fmt, ...);
