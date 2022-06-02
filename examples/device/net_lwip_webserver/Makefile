@@ -11,6 +11,7 @@ CFLAGS += \
   -Wno-error=null-dereference \
   -Wno-error=unused-parameter \
   -Wno-error=unused-variable \
+  -Wno-error=maybe-uninitialized \
   -Wno-error=cast-qual
 
 INC += \
