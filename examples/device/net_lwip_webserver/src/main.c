@@ -62,8 +62,9 @@ try changing the first byte of tud_network_mac_address[] below from 0x02 to 0x00
 
 #include "udpecho.h"
 
+void tcpecho_init(void);
 // Increase stack size when debug log is enabled
-#define USBD_STACK_SIZE    (32*configMINIMAL_STACK_SIZE/2) * (CFG_TUSB_DEBUG ? 2 : 1)
+#define USBD_STACK_SIZE    8192 //(32*configMINIMAL_STACK_SIZE/2) * (CFG_TUSB_DEBUG ? 2 : 1)
 
 #define INIT_IP4(a,b,c,d) { PP_HTONL(LWIP_MAKEU32(a,b,c,d)) }
 
@@ -188,7 +189,7 @@ bool tud_network_recv_cb(const uint8_t *src, uint16_t size)
 
   if (size)
   {
-    struct pbuf *p = pbuf_alloc(PBUF_RAW, size, PBUF_POOL);
+    struct pbuf *p = pbuf_alloc(PBUF_RAW, size, PBUF_RAM);
 
     if (p)
     {
@@ -263,6 +264,7 @@ void usb_device_task(void* param)
   while (dhserv_init(&dhcp_config) != ERR_OK);
   while (dnserv_init(IP_ADDR_ANY, 53, dns_query_proc) != ERR_OK);
   udpecho_init();
+  tcpecho_init();
 
   // This should be called after scheduler/kernel is started.
   // Otherwise it could cause kernel issue since USB IRQ handler does use RTOS queue API.
@@ -302,6 +304,3 @@ int main(void)
   return 0;
 }
 
-void custom_debug_message(const char *fmt, ...) {
-	TU_LOG1(fmt);
-}
