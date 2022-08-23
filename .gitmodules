@@ -146,3 +146,6 @@
 [submodule "hw/mcu/allwinner"]
 	path = hw/mcu/allwinner
 	url = https://github.com/hathach/allwinner_driver.git
+[submodule "lib/libopencm3"]
+	path = lib/libopencm3
+	url = https://github.com/libopencm3/libopencm3.git
